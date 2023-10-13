@@ -1,43 +1,47 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-contract Calculator {
-    uint public result;
+contract BingkoinBank {
+    address public owner = msg.sender;
+    mapping(address => uint256) public balances;
+    uint256 existing = 1000;
 
-    function add(uint a, uint b) public returns (uint){
-        result = a + b;
-        // Double check results
-        assert(result > a);
-        return result;
+    constructor() {
+        balances[msg.sender] = 100;
     }
 
-    function subtract(uint a, uint b) public returns (uint) {
-        result = a - b;
-        // Double check results
-        assert(result < a);
-        return result;
+    function burnCoin(uint256 amount) public {
+        // Checks if the sender is the owner
+        require(msg.sender == owner, "You do not own this account.");
+        
+        // Check if the sender has enough coins to burn
+        require(balances[msg.sender] >= amount, "You do not have enough coins to burn.");
+
+        // Keeps track of previous balances
+        uint256 balanceBefore = balances[msg.sender];
+
+        // Subtract the burned amount from the sender's balance
+        balances[msg.sender] -= amount;
+        existing -= amount;
+
+        // Double check (internally) if the user's balance has been updated correctly
+        assert(balances[msg.sender] == balanceBefore - amount);
     }
 
-    function multiply(uint a, uint b) public returns (uint) {
-        result = a * b;
-        // Double check results
-        assert(b == 0 || result / b == a);
-        return result;
-    }
+    function mintCoin(uint256 amount) public {
+        if (msg.sender != owner) {
+            revert("You must be an owner to mint coins.");
+        }
 
-    function divide(uint a, uint b) public returns (uint){
-        require(b != 0, "Cannot divide by zero!");
-        // Since there are no floats, check if divisible
-        require(a % b == 0, "Numbers must be divisible!");
-        result = a / b;
-        // Double check results
-        assert(result * b == a);
-        return result;
-    }
+        // Keeps track of previous balances
+        uint256 balanceBefore = balances[msg.sender];
 
-    function isZero() public view {
-        if (result == 0) {
-            revert("The result is zero.");
+        // Add the minted amount to the sender's balance
+        balances[msg.sender] += amount;
+        existing += amount;
+
+        if (!(balances[msg.sender] == balanceBefore + amount)) {
+            revert("Transaction Failed");
         }
     }
 }
